@@ -1,6 +1,7 @@
 //Project Design Testing int version (bruh)
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #define STRMAX 50
 #define SIZEMAX 40
@@ -8,12 +9,12 @@
 
 void getFilename(char name[]);
 int readFile(int rows, int cols, int img[][cols],int* rcount, FILE* ptr);
-void displayImage(int rCount, int cCount, int cols, int img[][cols], FILE* ptr);
-void cropImage(int TopBot, int LeftRi, int rowsize, int charsize, int cols,int img[][cols],int* newRowSize,int* newCharSize);
+void printImage(int rCount, int cCount, int cols, int img[][cols], FILE* ptr);
+void cropImage(int newL, int newR, int newTop, int newBot, int rCount, int cCount, int cols, int img[][cols], int edit[][cols]);
 
 int main(){
 	char fileName[STRMAX];
-	int image[SIZEMAX][SIZEMAX], rowSize=0, colSize=0;
+	int image[SIZEMAX][SIZEMAX]={0}, edit[SIZEMAX][SIZEMAX]={0}, rowSize=0, colSize=0;
 	FILE* fptr;
 	
 	getFilename(fileName);
@@ -28,17 +29,36 @@ int main(){
 	
 	colSize = readFile(SIZEMAX,SIZEMAX,image,&rowSize,fptr);
 	
-	
 	fclose(fptr);
 	
-	displayImage(rowSize,colSize,SIZEMAX,image,stdout);
+	printImage(rowSize,colSize,SIZEMAX,image,stdout);
+
+	///// crop menu will define these new size values
+	
+	int newL=4, newR=18, newTop=2, newBot=11;
+	
+	cropImage(newL,newR,newTop,newBot,rowSize,colSize,SIZEMAX,image,edit);
+	
+	printImage(newBot-newTop+1,newR-newL+1,SIZEMAX,edit,stdout);
+	
+	printf("%d\n", newBot-newTop);
+	printf("%d\n", newR-newL);
 	
 	printf("%d\n", colSize);
 	printf("%d\n", rowSize);
 	
+	getFilename(fileName);
 	
+	fptr = fopen(fileName,"w");
 	
-	return 0;
+	if(fptr == NULL){
+		printf("Upload File could not be opened.\n");
+		return 0;
+	}
+	
+	printImage(newBot-newTop+1,newR-newL+1,SIZEMAX,edit,fptr);
+	
+	fclose(fptr);
 }
 
 void getFilename(char name[]){
@@ -67,17 +87,46 @@ int readFile(int rows, int cols, int img[][cols],int* rcount, FILE* ptr){
 	return cCount;
 }
 
-void displayImage(int rCount, int cCount, int cols, int img[][cols], FILE* ptr){
+void printImage(int rCount, int cCount, int cols, int img[][cols], FILE* ptr){
 	for(int rowI=0;rowI<rCount;rowI++){
 		for(int colI=0;colI<cCount;colI++){
-			fprintf(ptr,"%d",img[rowI][colI]);
+			if(ptr == stdout){
+				switch(img[rowI][colI]){
+					case 0:
+						fprintf(ptr," ");
+						break;
+					case 1:
+						fprintf(ptr,".");
+						break;	
+					case 2:
+						fprintf(ptr,"o");
+						break;
+					case 3:
+						fprintf(ptr,"O");
+						break;
+					case 4:
+						fprintf(ptr,"0");
+						break;
+				}
+				fprintf(ptr,"%c",img[rowI][colI]);
+			}
+			else{ 
+				fprintf(ptr,"%d",img[rowI][colI]);
+			}
 		}
 		fprintf(ptr,"\n");
 	}
 }
 				
-
-
-
-
+void cropImage(int newL, int newR, int newTop, int newBot, int rCount, int cCount, int cols, int img[][cols], int edit[][cols]){
+	int editColI,editRowI = 0;
+	for(int rowI=newTop-1;rowI<newBot;rowI++){
+		editColI=0;
+		for(int colI=newL-1;colI<newR;colI++){
+			edit[editRowI][editColI]=img[rowI][colI];
+			editColI++;
+		}
+		editRowI++;
+	}
+}
 
