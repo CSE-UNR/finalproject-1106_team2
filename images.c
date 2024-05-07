@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #define STRMAX 50
-#define SIZEMAX 100
+#define SIZEMAX 500
 
 int mainMenu();
 int editMenu();
@@ -19,16 +19,17 @@ int cropMenu(int rCount, int cCount, int cols, int img[][cols], FILE* ptr,int* n
 void imageBrightness(int level, int rCount, int cCount, int cols, int img[][cols], int edit[][cols], FILE* ptr);
 
 int main(){
-	char fileName[STRMAX], saveChoice;
+	char fileName[STRMAX], saveChoice, saveType;
 	int image[SIZEMAX][SIZEMAX]={0}, edit[SIZEMAX][SIZEMAX]={0}, rowSize=0, colSize=0;
 	int mainInput, editInput, newL, newR, newTop, newBot;
-	bool bypassSave;
+	bool bypassSave, imageLoaded = false;
 	FILE* fptr;
 	
 	do{
 		mainInput = mainMenu();
 		printf("\n");
 		bypassSave = true;
+		saveType = 's'; //standard parameters
 		
 		switch(mainInput){
 			case 1:
@@ -41,42 +42,48 @@ int main(){
 				else{
 					colSize = readFile(SIZEMAX,SIZEMAX,image,&rowSize,fptr);
 					fclose(fptr);
+					imageLoaded = true;
 					printf("\nImage successfully loaded.\n");
 				}
 				break;
 			
 			case 2:
-				printImage(rowSize,colSize,SIZEMAX,image,stdout);
+				if(imageLoaded == true){
+					printImage(rowSize,colSize,SIZEMAX,image,stdout);
+				}
 				break;
 				
 			case 3:
-				editInput=editMenu();
-				switch(editInput){
-					case 1:
-						newBot= cropMenu(rowSize,colSize,SIZEMAX,image,stdout,&newL,&newR,&newTop);
-						cropImage(newL,newR,newTop,newBot,SIZEMAX,image,edit);
-						printImage(newBot-newTop+1,newR-newL+1,SIZEMAX,edit,stdout);
-						bypassSave = false;
-						break;
-						
-					case 2:															
-						imageBrightness(-1, rowSize, colSize, SIZEMAX, image, edit, stdout);
-						printImage(rowSize,colSize,SIZEMAX,edit,stdout);
-						bypassSave = false;
-						break;
+				if(imageLoaded == true){
+					editInput=editMenu();
+					switch(editInput){
+						case 1:
+							newBot= cropMenu(rowSize,colSize,SIZEMAX,image,stdout,&newL,&newR,&newTop);
+							cropImage(newL,newR,newTop,newBot,SIZEMAX,image,edit);
+							printImage(newBot-newTop+1,newR-newL+1,SIZEMAX,edit,stdout);
+							saveType = 'c';  //crop parameters
+							bypassSave = false;
+							break;
 							
-					case 3:
-						imageBrightness(1, rowSize, colSize, SIZEMAX, image, edit, stdout);
-						printImage(rowSize,colSize,SIZEMAX,edit,stdout);
-						bypassSave = false;
-						break;
+						case 2:															
+							imageBrightness(-1, rowSize, colSize, SIZEMAX, image, edit, stdout);
+							printImage(rowSize,colSize,SIZEMAX,edit,stdout);
+							bypassSave = false;
+							break;
+								
+						case 3:
+							imageBrightness(1, rowSize, colSize, SIZEMAX, image, edit, stdout);
+							printImage(rowSize,colSize,SIZEMAX,edit,stdout);
+							bypassSave = false;
+							break;
+								
+						case 0:
+							break;
 							
-					case 0:
-						break;
-						
-					default:
-						printf("\nInvalid option\n");
-						break;
+						default:
+							printf("\nInvalid option\n");
+							break;
+					}
 				}
 				break;
 				
@@ -85,11 +92,11 @@ int main(){
 				break;
 			default:
 				printf("\nInvalid option\n");
-			break;
+				break;
 		}
 			
 		if(bypassSave == false){
-			printf("\nWould you like to save the file? (y/n) ");
+			printf("Would you like to save the file? (y/n) ");
 			scanf(" %c",&saveChoice);
 			if(saveChoice == 'y'){
 				getFilename(fileName);
@@ -99,14 +106,22 @@ int main(){
 					printf("\nFile could not be opened.\n");
 				}
 				else{
-					printImage(rowSize,colSize,SIZEMAX,edit,fptr);
+					if(saveType == 's'){
+						printImage(rowSize,colSize,SIZEMAX,edit,fptr);
+					}
+					if(saveType == 'c'){
+						printImage(newBot-newTop+1,newR-newL+1,SIZEMAX,edit,fptr);
+					}	
 					printf("\nImage successfully saved.\n");
 					fclose(fptr);
 				}
 			}
 		}
 		
-
+		if(imageLoaded==false && mainInput != 0){
+			printf("No image loaded\n");
+		}
+		
 	}while(mainInput!=0);
 	
 	printf("\nGoodbye :)\n\n");
@@ -122,7 +137,7 @@ int mainMenu(){
 	printf("3: Edit image\n");
 	printf("0: Exit\n");
 	printf("\nChoose from one of the options above: ");
-	scanf("%d", &menuChoice);
+	scanf(" %d", &menuChoice);
 	
 	return menuChoice;
 }
@@ -135,7 +150,7 @@ int editMenu(){
 	printf("3: Brighten image\n");
 	printf("0: Return to main menu\n");
 	printf("\nChoose from one of the options above: ");
-	scanf("%d", &editChoice);
+	scanf(" %d", &editChoice);
 	printf("\n");
 	
 	return editChoice;
@@ -143,7 +158,7 @@ int editMenu(){
 
 void getFilename(char name[]){
 	printf("What is the name of your file? [example.txt]\n");
-	scanf("%c", (char *) stdin);  // clear null character from scanf
+	scanf("%*c");   //clear newline from previous scanf
 	fgets(name,STRMAX,stdin);
 	
 	for(int i=0; name[i] != '\0'; i++){
